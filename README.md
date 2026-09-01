@@ -4,6 +4,12 @@ Webline is a mobile-first, one-button browser game starring Spud, a regal
 jumping spider. Release to climb an endless web and hold to drop around forest
 hazards, predators, and collectible insects.
 
+## Screenshots
+
+| Climb the web | Chase insect trails | Dodge canopy hazards |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/webline-climb.png" alt="Spud climbing the web toward a golden insect" width="260"> | <img src="docs/screenshots/webline-hazards.png" alt="Spud climbing through a trail of green insects" width="260"> | <img src="docs/screenshots/webline-canopy.png" alt="Spud dodging a dark twig among insects" width="260"> |
+
 ## Development
 
 Requires Node.js 20 or newer.
