@@ -1,0 +1,14 @@
+name: webline
+metadata:
+  template: azd-init
+
+infra:
+  provider: bicep
+  path: infra
+
+services:
+  web:
+    project: .
+    language: js
+    host: staticwebapp
+    dist: dist
