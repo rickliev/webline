@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-**Status:** Validated
+**Status:** Deployed
 
 ## Application and Requirements
 
@@ -166,16 +166,18 @@ Validation refreshed at `2026-09-02T16:22:00Z`.
 
 ## Deployment Results
 
-- **Completed:** `2026-09-01`
+- **Completed:** `2026-09-02`
 - **Resource group:** `rg-webline-eastus2`
 - **Static Web App:** `stapp-webline-3g2vfrbj`
 - **SKU and region:** Free, East US 2
 - **Public endpoint:** https://proud-meadow-0a396930f.3.azurestaticapps.net/
 - **Provisioning:** `azd provision --no-prompt` succeeded
 - **Publishing:** `azd deploy --no-prompt` succeeded
+- **Latest update:** Published commit `4d538ff` with gameplay refinements,
+  spider-color options, and Exotics Source attribution.
 - **Endpoint verification:** Home page, JavaScript, CSS, web manifest, and
-  service worker returned HTTP 200; the deployed page contains the Webline title
-  and game canvas.
+  service worker returned HTTP 200; the deployed page contains the Ruby option,
+  sponsor link, and sponsor logo.
 - **Live role verification:** The Static Web App has no managed identity and the
   client-only game accesses no Azure data plane, so no live role assignments are
   required.
