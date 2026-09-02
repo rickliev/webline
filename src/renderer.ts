@@ -21,6 +21,7 @@ interface Palette {
   accent: string;
   accentSoft: string;
   success: string;
+  spider: string;
   danger: string;
   warning: string;
   sheen: string;
@@ -81,6 +82,7 @@ export class GameRenderer {
       accent: color("--cp-accent"),
       accentSoft: color("--cp-accent-soft"),
       success: color("--cp-success"),
+      spider: color("--spider-jewel") || color("--cp-success"),
       danger: color("--cp-danger"),
       warning: color("--cp-warning"),
       sheen: color("--cp-sheen"),
@@ -122,6 +124,7 @@ export class GameRenderer {
     for (const entity of snapshot.entities) {
       this.drawEntity(entity, alpha, elapsed);
     }
+    this.drawForestFloor(snapshot, elapsed);
     this.drawParticles();
     this.drawSpider(snapshot, alpha, elapsed);
     this.drawVignette();
@@ -352,11 +355,30 @@ export class GameRenderer {
 
     if (predator.predatorKind === "frog") {
       context.fillStyle = this.palette.success;
+      const hopExtension = Math.abs(Math.sin(predator.timer * 3.2));
+      const hindKneeX = -57 - hopExtension * 16;
+      const hindKneeY = 42 + hopExtension * 9;
+      const hindFootX = -72 - hopExtension * 22;
+      const hindFootY = 47 + hopExtension * 7;
+      const frontKneeX = 42 + hopExtension * 13;
+      const frontKneeY = 34 + hopExtension * 7;
+      const frontFootX = 61 + hopExtension * 18;
+      const frontFootY = 31 + hopExtension * 10;
 
       context.beginPath();
       context.moveTo(-24, 13);
-      context.quadraticCurveTo(-58, 17, -62, 49);
-      context.quadraticCurveTo(-39, 52, -10, 28);
+      context.quadraticCurveTo(
+        -52 - hopExtension * 15,
+        17 + hopExtension * 8,
+        hindKneeX,
+        hindKneeY,
+      );
+      context.quadraticCurveTo(
+        -39 - hopExtension * 5,
+        52 + hopExtension * 3,
+        -10,
+        28,
+      );
       context.closePath();
       context.globalAlpha = 0.68;
       context.fill();
@@ -395,16 +417,16 @@ export class GameRenderer {
       context.lineJoin = "round";
       context.beginPath();
       context.moveTo(25, 12);
-      context.lineTo(42, 34);
-      context.lineTo(61, 31);
+      context.lineTo(frontKneeX, frontKneeY);
+      context.lineTo(frontFootX, frontFootY);
       context.stroke();
 
       context.beginPath();
       context.moveTo(-36, 34);
-      context.lineTo(-57, 50);
-      context.lineTo(-72, 47);
-      context.moveTo(-57, 50);
-      context.lineTo(-69, 58);
+      context.lineTo(hindKneeX, hindKneeY);
+      context.lineTo(hindFootX, hindFootY);
+      context.moveTo(hindKneeX, hindKneeY);
+      context.lineTo(hindFootX + 3, hindFootY + 11);
       context.stroke();
 
       context.fillStyle = this.palette.surface;
@@ -479,7 +501,7 @@ export class GameRenderer {
       context.quadraticCurveTo(0, -29, 31, -16);
       context.stroke();
 
-      context.fillStyle = this.palette.success;
+      context.fillStyle = this.palette.spider;
       for (const spotX of [-25, -5, 15, 34]) {
         context.beginPath();
         context.arc(spotX, 1, 4, 0, Math.PI * 2);
@@ -604,7 +626,7 @@ export class GameRenderer {
     context.ellipse(0, -21, 23, 20, 0, 0, Math.PI * 2);
     context.fill();
 
-    context.fillStyle = this.palette.success;
+    context.fillStyle = this.palette.spider;
     context.beginPath();
     context.ellipse(0, 16, 12, 17, 0, 0, Math.PI * 2);
     context.fill();
@@ -635,6 +657,51 @@ export class GameRenderer {
       context.fillRect(particle.x - 3, particle.y - 3, 6, 6);
     }
     context.globalAlpha = 1;
+  }
+
+  private drawForestFloor(snapshot: GameSnapshot, elapsed: number): void {
+    const dangerTop = WORLD.bottomLimit - 280;
+    const dangerProgress = Math.max(
+      0,
+      Math.min(1, (snapshot.spider.y - dangerTop) / (WORLD.bottomLimit - dangerTop)),
+    );
+    const context = this.context;
+    const pulse = this.reducedMotion ? 1 : 0.82 + Math.sin(elapsed * 9) * 0.18;
+    const gradient = context.createLinearGradient(0, dangerTop, 0, this.height);
+    gradient.addColorStop(0, "transparent");
+    gradient.addColorStop(0.72, this.palette.accentSoft);
+    gradient.addColorStop(1, this.palette.danger);
+
+    context.save();
+    context.globalAlpha = 0.16 + dangerProgress * 0.3 * pulse;
+    context.fillStyle = gradient;
+    context.fillRect(0, dangerTop, this.width, this.height - dangerTop);
+
+    context.globalAlpha = 0.7 + dangerProgress * 0.3;
+    context.fillStyle = this.palette.text;
+    context.beginPath();
+    context.moveTo(0, this.height);
+    context.lineTo(0, WORLD.bottomLimit + 15);
+    for (let x = 0; x <= this.width; x += 45) {
+      const height = 28 + ((x / 45) % 3) * 12;
+      context.lineTo(x + 16, WORLD.bottomLimit - height);
+      context.lineTo(x + 25, WORLD.bottomLimit + 12);
+      context.lineTo(x + 38, WORLD.bottomLimit - height * 0.65);
+      context.lineTo(x + 45, WORLD.bottomLimit + 15);
+    }
+    context.lineTo(this.width, this.height);
+    context.closePath();
+    context.fill();
+
+    context.setLineDash([14, 12]);
+    context.strokeStyle = this.palette.danger;
+    context.lineWidth = 4 + dangerProgress * 3;
+    context.globalAlpha = 0.5 + dangerProgress * 0.5 * pulse;
+    context.beginPath();
+    context.moveTo(0, WORLD.bottomLimit);
+    context.lineTo(this.width, WORLD.bottomLimit);
+    context.stroke();
+    context.restore();
   }
 
   private drawVignette(): void {

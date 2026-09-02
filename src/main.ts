@@ -1,9 +1,9 @@
-import { FIXED_STEP } from "./constants";
+import { FIXED_STEP, WORLD } from "./constants";
 import { GameAudio } from "./audio";
 import { InputController } from "./input";
 import { GameRenderer } from "./renderer";
 import { GameSimulation } from "./simulation";
-import { storage } from "./storage";
+import { isSpiderColor, storage, type SpiderColor } from "./storage";
 import type { SimulationEvent } from "./types";
 import "./styles.css";
 
@@ -20,6 +20,12 @@ const pauseScreen = requireElement<HTMLElement>("#pause-screen");
 const startButton = requireElement<HTMLButtonElement>("#start-button");
 const restartButton = requireElement<HTMLButtonElement>("#restart-button");
 const soundToggle = requireElement<HTMLButtonElement>("#sound-toggle");
+const optionsButton = requireElement<HTMLButtonElement>("#options-button");
+const optionsClose = requireElement<HTMLButtonElement>("#options-close");
+const optionsScreen = requireElement<HTMLElement>("#options-screen");
+const colorInputs = Array.from(
+  document.querySelectorAll<HTMLInputElement>('input[name="spider-color"]'),
+);
 const hud = requireElement<HTMLElement>("#hud");
 const scoreElement = requireElement<HTMLElement>("#score");
 const comboElement = requireElement<HTMLElement>("#combo");
@@ -46,17 +52,39 @@ let lastTime = performance.now();
 let elapsed = 0;
 let effectTimer = 0;
 let pausedByVisibility = false;
+let optionsOpen = false;
+let resumeAfterOptions = false;
+
+const spiderColors: Record<Exclude<SpiderColor, "emerald">, string> = {
+  sapphire: "#2878d0",
+  amethyst: "#7b4bb7",
+  ruby: "#d51f3f",
+};
+
+function applySpiderColor(color: SpiderColor): void {
+  if (color === "emerald") {
+    document.documentElement.style.removeProperty("--spider-jewel");
+  } else {
+    document.documentElement.style.setProperty("--spider-jewel", spiderColors[color]);
+  }
+  for (const input of colorInputs) input.checked = input.value === color;
+  storage.setSpiderColor(color);
+  renderer.refreshPalette();
+}
 
 bestElement.textContent = String(bestScore);
 updateSoundButton();
+applySpiderColor(storage.getSpiderColor());
 
 const input = new InputController(
   canvas,
   (held) => {
+    if (optionsOpen) return;
     simulation.setDropHeld(held);
     if (held && simulation.phase === "playing") audio.pluck();
   },
   () => {
+    if (optionsOpen) return;
     if (simulation.phase === "ready" || simulation.phase === "gameOver") startGame();
   },
 );
@@ -140,6 +168,9 @@ function updateHud(): void {
   if (snapshot.warning) {
     warningText.textContent = `${snapshot.warning.toUpperCase()} INBOUND`;
     predatorWarning.hidden = false;
+  } else if (snapshot.spider.y > WORLD.bottomLimit - 260) {
+    warningText.textContent = "TOO LOW · RELEASE TO CLIMB";
+    predatorWarning.hidden = false;
   } else {
     predatorWarning.hidden = true;
   }
@@ -173,8 +204,50 @@ function updateSoundButton(): void {
   soundToggle.setAttribute("aria-pressed", String(!audio.enabled));
 }
 
+function openOptions(): void {
+  if (optionsOpen) return;
+  optionsOpen = true;
+  resumeAfterOptions = simulation.phase === "playing";
+  if (resumeAfterOptions) {
+    simulation.pause();
+    input.release();
+  }
+  optionsScreen.classList.add("is-visible");
+  optionsClose.focus({ preventScroll: true });
+  announcer.textContent = "Options opened.";
+}
+
+function closeOptions(): void {
+  if (!optionsOpen) return;
+  optionsOpen = false;
+  optionsScreen.classList.remove("is-visible");
+  if (resumeAfterOptions && simulation.phase === "paused") {
+    simulation.resume();
+    lastTime = performance.now();
+    accumulator = 0;
+  }
+  resumeAfterOptions = false;
+  optionsButton.focus({ preventScroll: true });
+  announcer.textContent = "Options closed.";
+}
+
 startButton.addEventListener("click", startGame);
 restartButton.addEventListener("click", startGame);
+optionsButton.addEventListener("click", openOptions);
+optionsClose.addEventListener("click", closeOptions);
+optionsScreen.addEventListener("click", (event) => {
+  if (event.target === optionsScreen) closeOptions();
+});
+for (const input of colorInputs) {
+  input.addEventListener("change", () => {
+    if (!isSpiderColor(input.value)) return;
+    applySpiderColor(input.value);
+    announcer.textContent = `${input.parentElement?.innerText.trim()} spider color selected.`;
+  });
+}
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && optionsOpen) closeOptions();
+});
 soundToggle.addEventListener("click", () => {
   const enabled = audio.toggle();
   storage.setSound(enabled);

@@ -17,13 +17,24 @@ describe("movement", () => {
     expect(game.spider.y).toBeGreaterThan(climbY);
   });
 
-  it("caps the spider at the top of the web", () => {
+  it("targets the spider after camping at the top for three seconds", () => {
     const game = new GameSimulation(2);
     game.start(2);
-    for (let step = 0; step < 1200; step += 1) game.step(FIXED_STEP);
-    expect(game.spider.y).toBeGreaterThanOrEqual(
-      WORLD.topLimit + WORLD.spiderRadius,
+    game.spider.invulnerableTimer = Number.POSITIVE_INFINITY;
+    for (let step = 0; step < 1200 && game.spider.y > WORLD.topLimit + 24; step += 1) {
+      game.step(FIXED_STEP);
+    }
+    const existingIds = new Set(game.entities.map((entity) => entity.id));
+    for (let step = 0; step < 120 * 3.1; step += 1) game.step(FIXED_STEP);
+    const hasCampingResponse = game.entities.some(
+      (entity) =>
+        !existingIds.has(entity.id) &&
+        (entity.kind === "twig" ||
+          (entity.kind === "predator" && entity.predatorKind === "bird")),
     );
+
+    expect(game.phase).toBe("playing");
+    expect(hasCampingResponse).toBe(true);
   });
 
   it("ends the run when a held drop reaches the forest floor", () => {
@@ -81,5 +92,62 @@ describe("determinism and scoring", () => {
     expect(game.multiplier).toBe(5);
     game.combo = 30;
     expect(game.multiplier).toBe(5);
+  });
+
+  it("guarantees a bird encounter after the late-game unlock", () => {
+    const game = new GameSimulation(17);
+    game.start(17);
+    game.spider.x = -1000;
+    game.spider.invulnerableTimer = Number.POSITIVE_INFINITY;
+
+    for (let step = 0; step < 120 * 80; step += 1) {
+      game.setDropHeld(game.spider.y < WORLD.height * 0.5);
+      game.step(FIXED_STEP);
+      if (
+        game.entities.some(
+          (entity) => entity.kind === "predator" && entity.predatorKind === "bird",
+        )
+      ) {
+        break;
+      }
+    }
+
+    expect(
+      game.entities.some(
+        (entity) => entity.kind === "predator" && entity.predatorKind === "bird",
+      ),
+    ).toBe(true);
+  });
+
+  it("steers an attacking bird toward the spider's live position", () => {
+    const game = new GameSimulation(23);
+    game.start(23);
+    game.spider.y = 300;
+    game.entities.push({
+      id: 999,
+      kind: "predator",
+      predatorKind: "bird",
+      x: 100,
+      y: 600,
+      previousX: 100,
+      previousY: 600,
+      radius: 48,
+      velocityX: 410,
+      velocityY: 0,
+      state: "attack",
+      timer: 5,
+      targetY: 600,
+      active: true,
+    });
+
+    game.step(FIXED_STEP);
+    const bird = game.entities.find(
+      (entity) => entity.kind === "predator" && entity.id === 999,
+    );
+    expect(bird?.kind === "predator" && bird.velocityY).toBeLessThan(0);
+
+    game.spider.y = 900;
+    for (let step = 0; step < 90; step += 1) game.step(FIXED_STEP);
+    expect(bird?.kind === "predator" && bird.velocityY).toBeGreaterThan(0);
   });
 });

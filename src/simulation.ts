@@ -48,6 +48,10 @@ const circleIntersectsRect = (
   return dx * dx + dy * dy <= radius * radius;
 };
 
+const BIRD_UNLOCK_TIME = 76;
+const BIRD_INTERVAL = 24;
+const TOP_CAMP_LIMIT = 3;
+
 export class GameSimulation {
   phase: GamePhase = "ready";
   spider: Spider = this.createSpider();
@@ -65,6 +69,8 @@ export class GameSimulation {
   private distanceScoreMark = 100;
   private nextId = 1;
   private elapsed = 0;
+  private nextBirdAt = BIRD_UNLOCK_TIME;
+  private topCampTimer = 0;
 
   constructor(seed = Date.now()) {
     this.random = new SeededRandom(seed);
@@ -86,6 +92,8 @@ export class GameSimulation {
     this.distanceScoreMark = 100;
     this.nextId = 1;
     this.elapsed = 0;
+    this.nextBirdAt = BIRD_UNLOCK_TIME;
+    this.topCampTimer = 0;
   }
 
   setDropHeld(held: boolean): void {
@@ -116,6 +124,7 @@ export class GameSimulation {
     }
 
     this.updateSpider(dt);
+    this.updateTopCamping(dt);
     this.updateEntities(dt, worldSpeed);
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
@@ -191,6 +200,24 @@ export class GameSimulation {
     }
   }
 
+  private updateTopCamping(dt: number): void {
+    const nearTop = this.spider.y <= WORLD.topLimit + this.spider.radius + 16;
+    if (!nearTop) {
+      this.topCampTimer = 0;
+      return;
+    }
+
+    this.topCampTimer += dt;
+    if (this.topCampTimer < TOP_CAMP_LIMIT) return;
+
+    this.topCampTimer = 0;
+    if (this.random.next() < 0.5) {
+      this.spawnTargetedTwig();
+    } else {
+      this.spawnPredator("bird", this.spider.y);
+    }
+  }
+
   private updateEntities(dt: number, worldSpeed: number): void {
     this.warning = null;
     for (const entity of this.entities) {
@@ -236,7 +263,12 @@ export class GameSimulation {
       }
     } else {
       predator.x += predator.velocityX * dt;
-      predator.y += Math.sign(predator.targetY - predator.y) * 155 * dt;
+      const desiredVelocityY = Math.max(
+        -340,
+        Math.min(340, (this.spider.y - predator.y) * 3.2),
+      );
+      predator.velocityY = moveToward(predator.velocityY, desiredVelocityY, 760 * dt);
+      predator.y += predator.velocityY * dt;
     }
 
     if (predator.timer <= 0 || predator.x < -140 || predator.x > WORLD.width + 140) {
@@ -245,6 +277,12 @@ export class GameSimulation {
   }
 
   private spawnPattern(): void {
+    if (this.elapsed >= this.nextBirdAt) {
+      this.spawnPredator("bird");
+      this.nextBirdAt = this.elapsed + BIRD_INTERVAL;
+      return;
+    }
+
     const roll = this.random.next();
     if (this.difficulty > 0.2 && roll < 0.11 + this.difficulty * 0.08) {
       this.spawnPredator();
@@ -280,6 +318,30 @@ export class GameSimulation {
       -128,
       false,
     );
+  }
+
+  private spawnTargetedTwig(): void {
+    const fromLeft = this.random.next() > 0.5;
+    const width = 230;
+    const worldSpeed =
+      WORLD.worldSpeed + (WORLD.maxWorldSpeed - WORLD.worldSpeed) * this.difficulty;
+    const travelTime = WORLD.webX / 520;
+    const y = this.spider.y - worldSpeed * travelTime;
+    const twig: Twig = {
+      id: this.nextId++,
+      kind: "twig",
+      x: fromLeft ? -width : WORLD.width,
+      y,
+      previousX: fromLeft ? -width : WORLD.width,
+      previousY: y,
+      width,
+      height: 30,
+      velocityX: (fromLeft ? 1 : -1) * 520,
+      breakable: false,
+      broken: false,
+      active: true,
+    };
+    this.entities.push(twig);
   }
 
   private spawnGlobPattern(): void {
@@ -350,21 +412,22 @@ export class GameSimulation {
     this.entities.push(insect);
   }
 
-  private spawnPredator(): void {
+  private spawnPredator(forcedKind?: PredatorKind, forcedTargetY?: number): void {
     const options: PredatorKind[] =
       this.difficulty < 0.45
         ? ["frog"]
         : this.difficulty < 0.72
           ? ["frog", "lizard"]
           : ["frog", "lizard", "bird"];
-    const predatorKind = this.random.pick(options);
+    const predatorKind = forcedKind ?? this.random.pick(options);
     const fromLeft = this.random.next() > 0.5;
     const targetY =
-      predatorKind === "frog"
+      forcedTargetY ??
+      (predatorKind === "frog"
         ? this.random.range(WORLD.height * 0.61, WORLD.height * 0.74)
         : predatorKind === "lizard"
           ? this.random.range(WORLD.height * 0.25, WORLD.height * 0.55)
-          : this.random.range(WORLD.topLimit + 80, WORLD.bottomLimit - 120);
+          : this.random.range(WORLD.topLimit + 80, WORLD.bottomLimit - 120));
     const initialY = predatorKind === "frog" ? targetY : targetY - 120;
     const predator: Predator = {
       id: this.nextId++,
@@ -378,6 +441,7 @@ export class GameSimulation {
       velocityX:
         (fromLeft ? 1 : -1) *
         (predatorKind === "bird" ? 410 : predatorKind === "lizard" ? 270 : 225),
+      velocityY: 0,
       state: "warning",
       timer: predatorKind === "bird" ? 0.8 : 1.1,
       targetY,

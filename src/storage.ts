@@ -1,5 +1,14 @@
 const BEST_KEY = "webline.best-score";
 const SOUND_KEY = "webline.sound-enabled";
+const SPIDER_COLOR_KEY = "webline.spider-color";
+
+export type SpiderColor = "emerald" | "sapphire" | "amethyst" | "ruby";
+
+export const isSpiderColor = (value: string | null): value is SpiderColor =>
+  value === "emerald" ||
+  value === "sapphire" ||
+  value === "amethyst" ||
+  value === "ruby";
 
 export const storage = {
   getBest(): number {
@@ -28,6 +37,22 @@ export const storage = {
       localStorage.setItem(SOUND_KEY, String(enabled));
     } catch {
       // Sound still works for the current session without storage.
+    }
+  },
+  getSpiderColor(): SpiderColor {
+    try {
+      const value = localStorage.getItem(SPIDER_COLOR_KEY);
+      if (value === "tanzanite") return "ruby";
+      return isSpiderColor(value) ? value : "emerald";
+    } catch {
+      return "emerald";
+    }
+  },
+  setSpiderColor(color: SpiderColor): void {
+    try {
+      localStorage.setItem(SPIDER_COLOR_KEY, color);
+    } catch {
+      // The selected color still applies for the current session.
     }
   },
 };

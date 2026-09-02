@@ -58,6 +58,7 @@ export interface Predator extends EntityBase {
   predatorKind: PredatorKind;
   radius: number;
   velocityX: number;
+  velocityY: number;
   state: "warning" | "attack";
   timer: number;
   targetY: number;

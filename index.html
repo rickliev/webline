@@ -90,6 +90,9 @@
             <span>BEST</span>
             <strong id="best-score">0</strong>
           </div>
+          <button class="icon-button" id="options-button" type="button" aria-label="Open options">
+            <span aria-hidden="true">◆</span>
+          </button>
           <button class="icon-button" id="sound-toggle" type="button" aria-label="Mute sound" aria-pressed="false">
             <span aria-hidden="true">♪</span>
           </button>
@@ -181,6 +184,59 @@
             <span>Climb again</span>
             <span class="button-key" aria-hidden="true">SPACE</span>
           </button>
+        </div>
+
+        <div
+          class="game-overlay options-screen"
+          id="options-screen"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="options-title"
+        >
+          <div class="options-header">
+            <div>
+              <p class="eyebrow">CUSTOMIZE SPUD</p>
+              <h2 id="options-title">Options</h2>
+            </div>
+            <button class="icon-button" id="options-close" type="button" aria-label="Close options">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <form class="options-form">
+            <fieldset>
+              <legend>Spider color</legend>
+              <div class="jewel-options">
+                <label class="jewel-option jewel-emerald">
+                  <input type="radio" name="spider-color" value="emerald" />
+                  <span class="jewel-swatch" aria-hidden="true"></span>
+                  <strong>Emerald</strong>
+                </label>
+                <label class="jewel-option jewel-sapphire">
+                  <input type="radio" name="spider-color" value="sapphire" />
+                  <span class="jewel-swatch" aria-hidden="true"></span>
+                  <strong>Sapphire</strong>
+                </label>
+                <label class="jewel-option jewel-amethyst">
+                  <input type="radio" name="spider-color" value="amethyst" />
+                  <span class="jewel-swatch" aria-hidden="true"></span>
+                  <strong>Amethyst</strong>
+                </label>
+                <label class="jewel-option jewel-ruby">
+                  <input type="radio" name="spider-color" value="ruby" />
+                  <span class="jewel-swatch" aria-hidden="true"></span>
+                  <strong>Ruby</strong>
+                </label>
+              </div>
+            </fieldset>
+          </form>
+          <a
+            class="sponsor"
+            href="https://exoticssource.com/"
+            aria-label="Visit Exotics Source"
+          >
+            <span>Brought to you by</span>
+            <img src="/exotics-source-logo.png" alt="Exotics Source" />
+          </a>
         </div>
 
         <div class="pause-overlay" id="pause-screen" hidden>

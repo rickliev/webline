@@ -61,8 +61,38 @@ export class GameAudio {
   }
 
   private warning(predator: PredatorKind): void {
-    const frequency = predator === "bird" ? 440 : predator === "lizard" ? 330 : 260;
+    if (predator === "bird") {
+      this.cardinalCall();
+      return;
+    }
+    const frequency = predator === "lizard" ? 330 : 260;
     this.tone(frequency, 0.09, 0.03, "square", frequency * 0.7);
+  }
+
+  private cardinalCall(): void {
+    if (!this.enabled) return;
+    const context = this.getContext();
+    if (!context) return;
+
+    for (const [delay, from, to, duration] of [
+      [0, 1750, 1180, 0.18],
+      [0.22, 1680, 1100, 0.17],
+      [0.43, 2050, 1420, 0.12],
+    ] as const) {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const start = context.currentTime + delay;
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(from, start);
+      oscillator.frequency.exponentialRampToValueAtTime(to, start + duration);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.035, start + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration);
+    }
   }
 
   private tone(

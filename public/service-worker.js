@@ -1,5 +1,9 @@
-const CACHE_NAME = "webline-v3";
-const APP_SHELL = ["./manifest.webmanifest", "./webline-icon.svg"];
+const CACHE_NAME = "webline-v4";
+const APP_SHELL = [
+  "./manifest.webmanifest",
+  "./webline-icon.svg",
+  "./exotics-source-logo.png",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
