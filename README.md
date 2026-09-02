@@ -41,7 +41,7 @@ The production site is written to `dist\`.
 
 Webline is deployed to Azure Static Web Apps:
 
-https://proud-meadow-0a396930f.3.azurestaticapps.net/
+https://webline.appxpert.net/
 
 The deployment uses the Free tier in East US 2. To deploy updates with the
 configured Azure Developer CLI environment:
