@@ -1,6 +1,6 @@
 # Azure Deployment Plan
 
-**Status:** Deployed
+**Status:** Validated
 
 ## Application and Requirements
 
@@ -148,20 +148,21 @@ This keeps provisioning repeatable and avoids portal-only configuration.
 
 ## Section 7: Validation Proof
 
-Validation completed at `2026-09-01T19:55:05Z`.
+Validation refreshed at `2026-09-02T16:22:00Z`.
 
 | Check | Command or review | Result |
 | --- | --- | --- |
 | Tooling | `azd version` | AZD 1.28.0 available |
-| Authentication | `azd auth login --check-status` | Authenticated as `rick@lievano.com` |
-| Environment | `azd env get-values` | `webline`, requested subscription, `eastus2` |
+| Authentication | `azd auth login --check-status` and `az account show` | Authenticated as `rick@lievano.com` in the requested subscription |
+| Environment | `azd env select webline` and `azd env get-values` | Existing `webline` environment targets `rg-webline-eastus2` in `eastus2` |
 | Bicep compilation | `az bicep build --file .\infra\main.bicep --stdout` | Passed |
-| Schema and what-if | `azd provision --preview --no-prompt` | Passed; only the planned resource group and Static Web App will be created |
-| Tests | `npm test` | 8 of 8 tests passed |
+| Schema and what-if | `azd provision --preview --no-prompt` | Passed; existing resource group retained and Static Web App target resolved |
+| Tests | `npm test -- --run` | 10 of 10 tests passed |
 | Build | `npm run build` | Passed; Vite emitted `dist` |
 | Package | `azd package --no-prompt` | Passed; packaged `dist` for service `web` |
 | Policies | `az policy assignment list --disable-scope-strict-match` | No inherited assignments returned |
-| Static RBAC review | Reviewed all Bicep files for identities and role assignments | No managed identity or data-plane access exists, so no role assignment is required |
+| Target conflict check | `az resource list` filtered by `azd-service-name: web` | Exactly one target found: `stapp-webline-3g2vfrbj` |
+| Static RBAC review | Searched all Bicep files for identities and role assignments | No managed identity or data-plane access exists, so no role assignment is required |
 
 ## Deployment Results
 
