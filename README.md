@@ -43,8 +43,10 @@ Webline is deployed to Azure Static Web Apps:
 
 https://webline.appxpert.net/
 
-The deployment uses the Free tier in East US 2. To deploy updates with the
-configured Azure Developer CLI environment:
+Pushes to `main` are tested, built, and deployed automatically by
+`.github/workflows/deploy-azure.yml`. The deployment uses the Free tier in
+East US 2. To deploy an update manually with the configured Azure Developer
+CLI environment:
 
 ```powershell
 azd env select webline
