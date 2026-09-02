@@ -53,3 +53,7 @@ azd deploy --no-prompt
 
 The repeatable Bicep infrastructure is in `infra\`. Scores are local to each
 browser; a shared leaderboard would require a separate backend service.
+
+## License
+
+Webline is available under the [MIT License](LICENSE).
