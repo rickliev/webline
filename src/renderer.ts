@@ -602,17 +602,23 @@ export class GameRenderer {
     context.strokeStyle = this.palette.text;
     context.lineWidth = 6;
     context.lineCap = "round";
+    const legMotion = this.reducedMotion
+      ? 0
+      : Math.min(1, Math.abs(spider.velocityY) / 550);
 
     for (let side = -1; side <= 1; side += 2) {
       for (let leg = 0; leg < 4; leg += 1) {
         const legY = -19 + leg * 13;
+        const legFlex =
+          Math.sin(elapsed * 10 + leg * 1.35 + (side > 0 ? 0.65 : 0)) *
+          legMotion;
         context.beginPath();
         context.moveTo(side * 16, legY);
         context.quadraticCurveTo(
-          side * (34 + leg * 2),
-          legY + (leg < 2 ? -15 : 15),
-          side * (48 + leg * 3),
-          legY + (leg < 2 ? -5 : 22),
+          side * (34 + leg * 2 + legFlex * 2.5),
+          legY + (leg < 2 ? -15 : 15) + legFlex * 5,
+          side * (48 + leg * 3 + legFlex * 3.5),
+          legY + (leg < 2 ? -5 : 22) + legFlex * 4,
         );
         context.stroke();
       }
